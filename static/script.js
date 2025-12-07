@@ -217,4 +217,14 @@ async function gitPush() {
     output.scrollTop = output.scrollHeight;
 }
 
+async function gitPull() {
+    const output = document.getElementById('cmd-output');
+    output.textContent += `> git pull origin main\n`;
+
+    const res = await API.post('/git-pull', {});
+    if (res.stdout) output.textContent += res.stdout;
+    if (res.stderr) output.textContent += res.stderr;
+    output.scrollTop = output.scrollHeight;
+}
+
 window.onload = init;

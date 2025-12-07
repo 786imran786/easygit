@@ -211,6 +211,10 @@ def manual_commit():
 def git_push():
     return jsonify(run_git_cmd("git push origin HEAD"))
 
+@app.route("/git-pull", methods=["POST"])
+def git_pull():
+    return jsonify(run_git_cmd("git pull origin main"))
+
 # ----------------- Terminal Command -----------------
 @app.route("/run-command", methods=["POST"])
 def run_command():
