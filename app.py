@@ -207,9 +207,33 @@ def manual_commit():
     msg = request.json.get("message")
     return jsonify(run_git_cmd(f'git commit -m "{msg}"'))
 
+@app.route("/get-remotes")
+def get_remotes():
+    if not CURRENT_REPO:
+        return jsonify([])
+    
+    res = run_git_cmd("git remote")
+    remotes = [r.strip() for r in res["stdout"].splitlines() if r.strip()]
+    return jsonify(remotes)
+
+@app.route("/git-pull", methods=["POST"])
+def git_pull():
+    remote = request.json.get("remote", "origin")
+    branch = request.json.get("branch", "main")
+    return jsonify(run_git_cmd(f"git pull {remote} {branch}"))
+
 @app.route("/git-push", methods=["POST"])
 def git_push():
-    return jsonify(run_git_cmd("git push origin HEAD"))
+    remote = request.json.get("remote", "origin")
+    branch = request.json.get("branch")
+    
+    # If branch is specified, push to that specific branch on remote
+    # Syntax: git push <remote> HEAD:<branch>
+    cmd = f"git push {remote} HEAD"
+    if branch:
+        cmd = f"git push {remote} HEAD:{branch}"
+        
+    return jsonify(run_git_cmd(cmd))
 
 # ----------------- Terminal Command -----------------
 @app.route("/run-command", methods=["POST"])
