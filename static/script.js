@@ -13,6 +13,7 @@ const API = {
         return res.json();
     }
 };
+
 let currentRepo = null;
 
 async function init() {
@@ -207,14 +208,80 @@ async function manualCommit() {
     updateDashboard();
 }
 
-async function gitPush() {
-    const output = document.getElementById('cmd-output');
-    output.textContent += `> git push origin HEAD\n`;
+// ----------------- Git Push -----------------
+async function openPushModal() {
+    await loadRemotes('push-remote');
+    document.getElementById('push-modal').classList.remove('hidden');
+}
 
-    const res = await API.post('/git-push', {});
+async function confirmPush() {
+    const remote = document.getElementById('push-remote').value;
+    const branch = document.getElementById('push-branch').value;
+
+    closeModal('push-modal');
+
+    const output = document.getElementById('cmd-output');
+    const branchText = branch ? `HEAD:${branch}` : 'HEAD';
+    output.textContent += `> git push ${remote} ${branchText}\n`;
+
+    const res = await API.post('/git-push', { remote, branch });
     if (res.stdout) output.textContent += res.stdout;
     if (res.stderr) output.textContent += res.stderr;
     output.scrollTop = output.scrollHeight;
+}
+
+// ----------------- Git Pull -----------------
+async function openPullModal() {
+    await loadRemotes('pull-remote');
+    document.getElementById('pull-modal').classList.remove('hidden');
+}
+
+async function confirmPull() {
+    const remote = document.getElementById('pull-remote').value;
+    const branch = document.getElementById('pull-branch').value;
+
+    closeModal('pull-modal');
+
+    const output = document.getElementById('cmd-output');
+    output.textContent += `> git pull ${remote} ${branch}\n`;
+
+    const res = await API.post('/git-pull', { remote, branch });
+    if (res.stdout) output.textContent += res.stdout;
+    if (res.stderr) output.textContent += res.stderr;
+    output.scrollTop = output.scrollHeight;
+
+    // Refresh dashboard after pull
+    updateDashboard();
+}
+
+// ----------------- Helpers -----------------
+
+async function loadRemotes(selectId) {
+    const select = document.getElementById(selectId);
+    select.innerHTML = '<option>Loading...</option>';
+
+    const remotes = await API.get('/get-remotes');
+    select.innerHTML = '';
+
+    if (remotes.length === 0) {
+        // Fallback if no remotes found
+        const opt = document.createElement('option');
+        opt.value = 'origin';
+        opt.textContent = 'origin (default)';
+        select.appendChild(opt);
+        return;
+    }
+
+    remotes.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r;
+        opt.textContent = r;
+        select.appendChild(opt);
+    });
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
 }
 
 function toggleSidebar() {

@@ -131,7 +131,12 @@
                         title="New Branch">+</button>
                 </div>
 
-                <button onclick="gitPush()"
+                <button onclick="openPullModal()"
+                    class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-1 px-3 rounded text-sm transition flex items-center gap-2">
+                    <span>⬇️</span> Pull
+                </button>
+
+                <button onclick="openPushModal()"
                     class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1 px-3 rounded text-sm transition flex items-center gap-2">
                     <span>⬆️</span> Push
                 </button>
@@ -201,6 +206,68 @@
 
         </div>
     </main>
+
+    </div>
+    </main>
+
+    <!-- Pull Modal -->
+    <div id="pull-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-gray-800 rounded-lg shadow-lg w-96 border border-gray-700">
+            <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-white">Git Pull</h3>
+                <button onclick="closeModal('pull-modal')" class="text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <div class="p-4 flex flex-col gap-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Remote</label>
+                    <select id="pull-remote"
+                        class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white outline-none focus:border-blue-500">
+                        <!-- Remotes populated by JS -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Remote Branch</label>
+                    <input id="pull-branch" type="text" value="main"
+                        class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white outline-none focus:border-blue-500"
+                        placeholder="e.g. main">
+                </div>
+                <button onclick="confirmPull()"
+                    class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded transition">
+                    Pull
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Push Modal -->
+    <div id="push-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-gray-800 rounded-lg shadow-lg w-96 border border-gray-700">
+            <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-white">Git Push</h3>
+                <button onclick="closeModal('push-modal')" class="text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <div class="p-4 flex flex-col gap-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Remote</label>
+                    <select id="push-remote"
+                        class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white outline-none focus:border-blue-500">
+                        <!-- Remotes populated by JS -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Target Branch (Remote)</label>
+                    <input id="push-branch" type="text"
+                        class="w-full bg-gray-900 border border-gray-600 rounded p-2 text-white outline-none focus:border-blue-500"
+                        placeholder="e.g. main (optional)">
+                    <p class="text-xs text-gray-500 mt-1">Leave empty to push HEAD to same branch name</p>
+                </div>
+                <button onclick="confirmPush()"
+                    class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded transition">
+                    Push
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script src="/static/script.js"></script>
 </body>
