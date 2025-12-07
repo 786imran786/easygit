@@ -39,37 +39,72 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #6b7280;
         }
+
+        /* Sidebar simple collapsed state styles */
+        #sidebar.collapsed {
+            width: 4rem;
+            /* w-16 */
+        }
+
+        #sidebar.collapsed .sidebar-text {
+            display: none;
+        }
+
+        #sidebar.collapsed .sidebar-section-title {
+            display: none;
+        }
+
+        #sidebar.collapsed #recent-repos-container {
+            display: none;
+        }
+
+        #sidebar.collapsed .toggle-icon {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 
 <body class="bg-gray-900 text-gray-100 font-sans h-screen flex overflow-hidden">
 
     <!-- Sidebar: Recent Repos & Tools -->
-    <aside class="w-64 bg-gray-800 border-r border-gray-700 flex flex-col">
-        <div class="p-4 border-b border-gray-700">
-            <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+    <aside id="sidebar"
+        class="w-64 bg-gray-800 border-r border-gray-700 flex flex-col transition-all duration-300 relative group">
+        <div class="p-4 border-b border-gray-700 flex items-center justify-between overflow-hidden">
+            <h1
+                class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent sidebar-text whitespace-nowrap">
                 Git Control
             </h1>
-        </div>
-
-        <div class="p-4">
-            <button onclick="selectRepoDialog()"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center justify-center gap-2 transition">
-                <span>📂</span> Open Repo
+            <button onclick="toggleSidebar()"
+                class="text-gray-400 hover:text-white focus:outline-none p-1 rounded hover:bg-gray-700 transition-colors toggle-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-6 h-6 toggle-icon transition-transform duration-300">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                </svg>
             </button>
         </div>
 
-        <div class="flex-1 overflow-y-auto px-2">
-            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-2">Recent Repos</h3>
-            <div id="recent-repos-list" class="space-y-1">
-                <!-- Recent repos injected here -->
+        <div class="p-4 flex flex-col gap-4">
+            <button onclick="selectRepoDialog()" title="Open Repo"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-0 rounded flex items-center justify-center gap-2 transition overflow-hidden">
+                <span class="text-xl">📂</span> <span class="sidebar-text whitespace-nowrap">Open Repo</span>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-2 overflow-x-hidden">
+            <h3
+                class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-2 sidebar-label sidebar-section-title whitespace-nowrap">
+                Recent Repos</h3>
+            <div id="recent-repos-container" class="space-y-1">
+                <div id="recent-repos-list" class="space-y-1">
+                    <!-- Recent repos injected here -->
+                </div>
             </div>
         </div>
 
         <div class="p-4 border-t border-gray-700">
-            <button onclick="aiCommit()"
-                class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white font-bold py-3 px-4 rounded shadow-lg flex items-center justify-center gap-2 transition">
-                <span>🤖</span> AI Auto Commit
+            <button onclick="aiCommit()" title="AI Auto Commit"
+                class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white font-bold py-3 px-0 rounded shadow-lg flex items-center justify-center gap-2 transition overflow-hidden">
+                <span class="text-xl">🤖</span> <span class="sidebar-text whitespace-nowrap">AI Auto Commit</span>
             </button>
         </div>
     </aside>

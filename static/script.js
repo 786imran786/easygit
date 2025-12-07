@@ -217,4 +217,12 @@ async function gitPush() {
     output.scrollTop = output.scrollHeight;
 }
 
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const isCollapsed = sidebar.classList.toggle('collapsed');
+
+    // Optional: Save state to localStorage if needed in future
+    // localStorage.setItem('sidebarCollapsed', isCollapsed);
+}
+
 window.onload = init;
