@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Control Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-gray-100 font-sans h-screen flex overflow-hidden">
+
+    <!-- Sidebar: Recent Repos & Tools -->
+    <aside class="w-64 bg-gray-800 border-r border-gray-700 flex flex-col">
+        <div class="p-4 border-b border-gray-700">
+            <h1 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                Git Control
+            </h1>
+        </div>
+
+        <div class="p-4">
+            <button onclick="selectRepoDialog()"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex items-center justify-center gap-2 transition">
+                <span>📂</span> Open Repo
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto px-2">
+            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-2">Recent Repos</h3>
+            <div id="recent-repos-list" class="space-y-1">
+                <!-- Recent repos injected here -->
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-gray-700">
+            <button onclick="aiCommit()"
+                class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 text-white font-bold py-3 px-4 rounded shadow-lg flex items-center justify-center gap-2 transition">
+                <span>🤖</span> AI Auto Commit
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0">
+
+        <!-- Header -->
+        <header class="bg-gray-800 border-b border-gray-700 h-14 flex items-center px-6 justify-between">
+            <div class="flex items-center gap-2 overflow-hidden">
+                <span class="text-gray-400">Current:</span>
+                <span id="current-repo-display" class="font-mono text-sm text-yellow-400 truncate">No Repo
+                    Selected</span>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 bg-gray-700 rounded px-2 py-1">
+                    <span class="text-xs text-gray-400">Branch:</span>
+                    <select id="branch-select" onchange="switchBranch()"
+                        class="bg-transparent border-none text-sm focus:ring-0 cursor-pointer outline-none">
+                        <!-- Branches -->
+                    </select>
+                    <button onclick="createBranch()" class="text-green-400 hover:text-green-300 text-lg font-bold px-1"
+                        title="New Branch">+</button>
+                </div>
+
+                <button onclick="gitPush()"
+                    class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1 px-3 rounded text-sm transition flex items-center gap-2">
+                    <span>⬆️</span> Push
+                </button>
+            </div>
+        </header>
+
+        <!-- Workspace Grid -->
+        <div class="flex-1 p-4 grid grid-cols-3 gap-4 overflow-hidden">
+
+            <!-- Col 1: Staging Area -->
+            <div class="col-span-1 flex flex-col gap-4 min-h-0">
+
+                <!-- Unstaged -->
+                <div class="flex-1 bg-gray-800 rounded-lg border border-gray-700 flex flex-col min-h-0">
+                    <div class="p-2 border-b border-gray-700 bg-gray-750 flex justify-between items-center">
+                        <span class="font-bold text-red-400 text-sm">Unstaged Changes</span>
+                        <button onclick="gitAddAll()"
+                            class="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-white transition">Stage
+                            All</button>
+                    </div>
+                    <div id="unstaged-list" class="flex-1 overflow-y-auto p-1"></div>
+                </div>
+
+                <!-- Staged -->
+                <div class="flex-1 bg-gray-800 rounded-lg border border-gray-700 flex flex-col min-h-0">
+                    <div class="p-2 border-b border-gray-700 bg-gray-750 flex justify-between items-center">
+                        <span class="font-bold text-green-400 text-sm">Staged Changes</span>
+                    </div>
+                    <div id="staged-list" class="flex-1 overflow-y-auto p-1"></div>
+
+                    <!-- Manual Commit Area -->
+                    <div class="p-2 border-t border-gray-700 bg-gray-750 flex flex-col gap-2">
+                        <textarea id="commit-msg"
+                            class="w-full bg-gray-900 text-sm p-2 rounded border border-gray-600 focus:border-blue-500 outline-none resize-none h-16"
+                            placeholder="Commit message..."></textarea>
+                        <button onclick="manualCommit()"
+                            class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-1 px-3 rounded transition">
+                            Commit
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Col 2: Commit History -->
+            <div class="col-span-1 bg-gray-800 rounded-lg border border-gray-700 flex flex-col min-h-0">
+                <div class="p-2 border-b border-gray-700 bg-gray-750">
+                    <span class="font-bold text-blue-400 text-sm">Commit History</span>
+                </div>
+                <div id="history-list" class="flex-1 overflow-y-auto p-0"></div>
+            </div>
+
+            <!-- Col 3: Terminal -->
+            <div class="col-span-1 bg-black rounded-lg border border-gray-700 flex flex-col min-h-0 shadow-inner">
+                <div class="p-2 border-b border-gray-800 bg-gray-900 flex justify-between items-center">
+                    <span class="font-bold text-gray-400 text-sm font-mono">Terminal</span>
+                </div>
+                <pre id="cmd-output"
+                    class="flex-1 overflow-y-auto p-2 font-mono text-xs text-green-500 whitespace-pre-wrap leading-tight"></pre>
+                <div class="p-2 border-t border-gray-800 bg-gray-900 flex gap-2">
+                    <span class="text-green-500 font-bold">></span>
+                    <input id="cmd-input" type="text"
+                        class="flex-1 bg-transparent border-none outline-none text-white font-mono text-sm"
+                        placeholder="git status..." onkeydown="if(event.key==='Enter') runCommand()">
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="/static/script.js"></script>
+</body>
+
+</html>
