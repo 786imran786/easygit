@@ -27,28 +27,21 @@ else:
 #  GLOBAL STATE
 # ---------------------------------------------------------------
 CURRENT_REPO = None
-RECENT_REPOS_FILE = "recent_repos.json"
+RECENT_REPOS = []
 GEMINI_SCRIPT = r"C:\Users\mohdi\autocommit-tool\autocommit_gemini.py"
 
 # ---------------------------------------------------------------
 #  HELPERS
 # ---------------------------------------------------------------
 def load_recent_repos():
-    if os.path.exists(RECENT_REPOS_FILE):
-        try:
-            with open(RECENT_REPOS_FILE, "r") as f:
-                return json.load(f)
-        except:
-            return []
-    return []
+    return RECENT_REPOS
 
 def save_recent_repo(path):
-    repos = load_recent_repos()
-    if path in repos:
-        repos.remove(path)
-    repos.insert(0, path)
-    with open(RECENT_REPOS_FILE, "w") as f:
-        json.dump(repos[:10], f)
+    global RECENT_REPOS
+    if path in RECENT_REPOS:
+        RECENT_REPOS.remove(path)
+    RECENT_REPOS.insert(0, path)
+    RECENT_REPOS = RECENT_REPOS[:10]
 
 def run_git_cmd(command, repo_path=None):
     repo = repo_path or CURRENT_REPO
