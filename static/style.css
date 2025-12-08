@@ -1,0 +1,76 @@
+/* Navbar Styles */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #0F0F0F;
+    color: white;
+    padding: 1rem 2rem;
+    margin: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.brand {
+    font-size: 1.25rem;
+    font-weight: 700;
+    /* gradient text example if desired, else just white */
+    background: linear-gradient(to right, #60a5fa, #a855f7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-links li {
+    font-size: 0.95rem;
+    color: #d1d5db;
+    /* gray-300 */
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.nav-links li:hover {
+    color: white;
+}
+
+/* Git Action Panel Styles */
+.git-action-panel {
+    display: flex;
+    align-items: center;
+    background-color: #1C1C1C;
+    padding: 0.75rem 2rem;
+    margin: 0 1rem 1rem 1rem;
+    border-radius: 8px;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    /* Allow wrapping on small screens */
+    border: 1px solid #374151;
+    /* gray-700 */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .nav-links {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .git-action-panel {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
