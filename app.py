@@ -51,10 +51,20 @@ def run_git_cmd(command, repo_path=None):
     full_cmd = f'cd "{repo}" && {command}'
 
     try:
-        result = subprocess.run(full_cmd, shell=True, capture_output=True, text=True)
+        # Force UTF-8 and replace errors to avoid crashing on specific chars
+        # On Windows, shell=True often uses system encoding (cp1252), but git outputs UTF-8.
+        # This misalignment causes crashes. Explicit encoding fixes it.
+        result = subprocess.run(
+            full_cmd, 
+            shell=True, 
+            capture_output=True, 
+            text=True, 
+            encoding='utf-8', 
+            errors='replace'
+        )
         return {
-            "stdout": result.stdout,
-            "stderr": result.stderr,
+            "stdout": result.stdout if result.stdout is not None else "",
+            "stderr": result.stderr if result.stderr is not None else "",
             "returncode": result.returncode
         }
     except Exception as e:
@@ -228,6 +238,58 @@ def git_push():
         
     return jsonify(run_git_cmd(cmd))
 
+@app.route("/get-graph")
+def get_graph():
+    # Helper to clean strings
+    def clean(s):
+        return s.strip().strip("'").strip('"')
+
+    # Format: Hash | Parents | AuthorName | AuthorEmail | Refs | Subject
+    cmd = 'git log --pretty=format:"%H|%P|%an|%ae|%D|%s" --all'
+    res = run_git_cmd(cmd)
+
+    if res.get("error"):
+        return jsonify({"error": res["error"]})
+
+    commits = []
+
+    lines = res["stdout"].splitlines()
+    for line in lines:
+        try:
+            parts = line.split("|")
+            if len(parts) < 6:
+                continue
+                
+            commit_hash = clean(parts[0])
+            parents_str = clean(parts[1])
+            parents = parents_str.split() if parents_str else []
+            
+            author_name = clean(parts[2])
+            author_email = clean(parts[3])
+            
+            refs_str = clean(parts[4])
+            refs = [r.strip() for r in refs_str.split(",")] if refs_str else []
+            
+            subject = "|".join(parts[5:]) # Re-join subject if it contained pipes
+
+            commits.append({
+                "hash": commit_hash,
+                "parents": parents,
+                "refs": refs,
+                "author": {
+                    "name": author_name,
+                    "email": author_email
+                },
+                "subject": subject
+            })
+        except Exception:
+            continue
+
+    return jsonify(commits)
+
+
+
+
 # ----------------- Terminal Command -----------------
 @app.route("/run-command", methods=["POST"])
 def run_command():
@@ -247,7 +309,9 @@ def git_diff():
     if source == "WORKTREE":
         cmd = f"git diff {target}"
     else:
-        cmd = f"git diff {target}...{source}"
+        # Direct comparison between two tips (equivalent to 'git diff target source')
+        # This matches 'git diff main' behavior when checked out to source
+        cmd = f"git diff {target} {source}"
 
     res = run_git_cmd(cmd)
     if res.get("error") or res["returncode"] != 0:
@@ -279,6 +343,46 @@ def git_diff():
     
     return jsonify(diff_data)
 
+    return jsonify(diff_data)
+
+# ----------------- Repo Tree -----------------
+def get_directory_structure(rootdir):
+    """
+    Creates a nested dictionary that represents the folder structure of rootdir
+    """
+    dir_name = os.path.basename(rootdir)
+    dir_structure = {"name": dir_name, "type": "directory", "children": []}
+    
+    try:
+        with os.scandir(rootdir) as it:
+            entries = sorted(list(it), key=lambda e: (not e.is_dir(), e.name.lower()))
+            for entry in entries:
+                if entry.name.startswith('.') or entry.name in ['__pycache__', 'node_modules', 'venv', 'env']:
+                    continue
+                    
+                if entry.is_dir(follow_symlinks=False):
+                    dir_structure["children"].append(get_directory_structure(entry.path))
+                else:
+                    dir_structure["children"].append({
+                        "name": entry.name,
+                        "type": "file"
+                    })
+    except PermissionError:
+        pass
+        
+    return dir_structure
+
+@app.route("/get-repo-tree")
+def get_repo_tree():
+    if not CURRENT_REPO:
+        return jsonify({"error": "No repo selected"})
+    
+    if not os.path.isdir(CURRENT_REPO):
+         return jsonify({"error": "Invalid repo path"})
+
+    tree = get_directory_structure(CURRENT_REPO)
+    return jsonify(tree)
+
 # ----------------- AI Commit -----------------
 @app.route("/ai-commit", methods=["POST"])
 def ai_commit():
@@ -288,6 +392,9 @@ def ai_commit():
     full = f'cd "{CURRENT_REPO}" && python "{GEMINI_SCRIPT}" --yes'
     result = subprocess.run(full, shell=True, capture_output=True, text=True)
     return jsonify({"stdout": result.stdout, "stderr": result.stderr})
+
+
+
 
 # ---------------------------------------------------------------
 #  START SERVER

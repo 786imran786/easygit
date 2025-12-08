@@ -359,6 +359,140 @@ function renderDiff(data) {
     });
 }
 
+// ----------------- Repo Tree -----------------
+let isTreeLoaded = false;
+
+function switchSidebarTab(tab) {
+    const recentBtn = document.getElementById('tab-recent');
+    const filesBtn = document.getElementById('tab-files');
+    const recentView = document.getElementById('view-recent');
+    const filesView = document.getElementById('view-files');
+
+    if (tab === 'recent') {
+        recentBtn.className = 'flex-1 py-1 text-xs font-bold text-center rounded bg-gray-700 text-white transition-all shadow-sm';
+        filesBtn.className = 'flex-1 py-1 text-xs font-bold text-center rounded text-gray-400 hover:text-gray-200 transition-all';
+
+        recentView.classList.remove('hidden', 'opacity-0', '-translate-x-10');
+        filesView.classList.add('hidden', 'opacity-0', 'translate-x-10');
+    } else {
+        filesBtn.className = 'flex-1 py-1 text-xs font-bold text-center rounded bg-gray-700 text-white transition-all shadow-sm';
+        recentBtn.className = 'flex-1 py-1 text-xs font-bold text-center rounded text-gray-400 hover:text-gray-200 transition-all';
+
+        filesView.classList.remove('hidden', 'opacity-0', 'translate-x-10');
+        recentView.classList.add('hidden', 'opacity-0', '-translate-x-10');
+
+        if (!isTreeLoaded && currentRepo) {
+            loadRepoTree();
+        }
+    }
+}
+
+async function loadRepoTree() {
+    const container = document.getElementById('repo-tree-container');
+    container.innerHTML = '<div class="text-gray-500 animate-pulse p-2">Loading tree...</div>';
+
+    const tree = await API.get('/get-repo-tree');
+    if (tree.error) {
+        container.innerHTML = `<div class="text-red-400 p-2 text-xs">${tree.error}</div>`;
+        return;
+    }
+
+    container.innerHTML = '';
+
+    // Create a recursive render function
+    function createNode(node) {
+        if (node.type === 'file') {
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-2 p-1 hover:bg-gray-800 rounded cursor-default text-gray-300 hover:text-white transition-colors pl-4 border-l border-transparent hover:border-gray-600';
+            div.innerHTML = `<span class="opacity-70">📄</span> <span class="truncate">${node.name}</span>`;
+            return div;
+        } else {
+            // Directory
+            const details = document.createElement('details');
+            details.className = 'group';
+
+            const summary = document.createElement('summary');
+            summary.className = 'flex items-center gap-2 p-1 hover:bg-gray-800 rounded cursor-pointer text-blue-200 hover:text-white transition-colors list-none outline-none';
+            summary.innerHTML = `
+                <span class="transform transition-transform group-open:rotate-90 text-gray-500 text-[10px] w-3">▶</span>
+                <span class="text-yellow-500 opacity-80">📁</span> 
+                <span class="font-bold truncate">${node.name}</span>
+            `;
+
+            details.appendChild(summary);
+
+            const childrenContainer = document.createElement('div');
+            childrenContainer.className = 'pl-3 border-l border-gray-700 ml-1.5 mt-1 space-y-0.5';
+
+            if (node.children) {
+                node.children.forEach(child => {
+                    childrenContainer.appendChild(createNode(child));
+                });
+            }
+
+            details.appendChild(childrenContainer);
+            return details;
+        }
+    }
+
+    if (tree.children) {
+        tree.children.forEach(child => {
+            container.appendChild(createNode(child));
+        });
+    } else {
+        container.innerHTML = '<div class="text-gray-500 italic p-2">Empty repository</div>';
+    }
+
+    isTreeLoaded = true;
+}
+async function openGraphModal() {
+    document.getElementById("graph-modal").classList.remove("hidden");
+
+    const data = await API.get("/get-graph");
+
+    const container = document.getElementById("git-graph");
+    container.innerHTML = ""; // reset
+
+    // Custom template for balanced view
+    const template = GitgraphJS.templateExtend("metro", {
+        commit: {
+            message: {
+                displayAuthor: true, // Show author again for clarity
+                displayHash: true, // Show hash
+                font: "normal 12pt sans-serif", // Readable font
+            },
+            spacing: 40, // Increased from 30
+            dot: {
+                size: 8, // Increased from 6
+                strokeWidth: 2
+            }
+        },
+        branch: {
+            lineWidth: 3,
+            spacing: 30, // Increased from 20
+            label: {
+                font: "normal 10pt sans-serif",
+                borderRadius: 5
+            }
+        }
+    });
+
+    const graph = GitgraphJS.createGitgraph(container, {
+        orientation: "vertical-reverse",
+        template: template,
+        responsive: false // Disable responsive to prevent shrinking/scaling issues, let it overflow naturally
+    });
+
+    // Import data directly
+    // The library expects oldest to newest? 
+    // Wait, the API returns git log (usually newest to oldest).
+    // graph.import expects array. Let's try passing it directly, usually it handles it or we reverse it.
+    // Based on library code: const r=t.map(...).reverse(); 
+    // It reverses the input internally! So if we pass Newest->Oldest (git log default), it becomes Oldest->Newest.
+    // So passing `data` directly from git log is correct.
+    graph.import(data);
+}
+
 // ----------------- Helpers -----------------
 
 async function loadRemotes(selectId) {
@@ -392,9 +526,6 @@ function closeModal(modalId) {
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const isCollapsed = sidebar.classList.toggle('collapsed');
-
-    // Optional: Save state to localStorage if needed in future
-    // localStorage.setItem('sidebarCollapsed', isCollapsed);
 }
 
 window.onload = init;

@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Git Control Center</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
@@ -112,8 +113,21 @@
                 class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-1 px-3 rounded text-sm transition flex items-center gap-2 border border-purple-500">
                 <span>🔍</span> Diff
             </button>
+            <button onclick="openGraphModal()"
+                class="bg-pink-600 hover:bg-pink-500 px-3 py-1 rounded text-white font-bold">
+                📊 Visualize Repo
+            </button>
+
         </div>
     </section>
+    <div id="graph-modal" class="fixed inset-0 bg-black bg-opacity-80 hidden z-50">
+        <div class="bg-gray-900 w-[90%] h-[90%] mx-auto mt-10 rounded shadow-lg p-4 overflow-auto">
+            <button onclick="closeModal('graph-modal')" class="float-right text-gray-400 hover:text-white">✖</button>
+            <h2 class="text-xl font-bold mb-4">Repository Visualization</h2>
+
+            <div id="git-graph" class="w-full h-full"></div>
+        </div>
+    </div>
 
     <!-- Main Content Area -->
     <div class="flex flex-1 overflow-hidden">
@@ -135,21 +149,55 @@
             </div>
 
             <div class="p-4 flex flex-col gap-4">
-                <button onclick="selectRepoDialog()" title="Open Repo"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-0 rounded flex items-center justify-center gap-2 transition overflow-hidden">
-                    <span class="text-xl">📂</span> <span class="sidebar-text whitespace-nowrap">Open Repo</span>
-                </button>
+                <!-- Tab Buttons -->
+                <div class="flex rounded bg-gray-900 p-1 border border-gray-700">
+                    <button id="tab-recent" onclick="switchSidebarTab('recent')"
+                        class="flex-1 py-1 text-xs font-bold text-center rounded bg-gray-700 text-white transition-all shadow-sm">
+                        Recent
+                    </button>
+                    <button id="tab-files" onclick="switchSidebarTab('files')"
+                        class="flex-1 py-1 text-xs font-bold text-center rounded text-gray-400 hover:text-gray-200 transition-all">
+                        Files
+                    </button>
+                </div>
+
+                <div id="open-repo-btn-container">
+                    <button onclick="selectRepoDialog()" title="Open Repo"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-0 rounded flex items-center justify-center gap-2 transition overflow-hidden">
+                        <span class="text-xl">📂</span> <span class="sidebar-text whitespace-nowrap">Open Repo</span>
+                    </button>
+                </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto px-2 overflow-x-hidden">
-                <h3
-                    class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-2 sidebar-label sidebar-section-title whitespace-nowrap">
-                    Recent Repos</h3>
-                <div id="recent-repos-container" class="space-y-1">
-                    <div id="recent-repos-list" class="space-y-1">
-                        <!-- Recent repos injected here -->
+            <!-- Sidebar Content Area -->
+            <div class="flex-1 overflow-y-auto px-2 overflow-x-hidden relative">
+
+                <!-- Recent Repos View -->
+                <div id="view-recent" class="transition-all duration-300 absolute inset-0 px-2 overflow-y-auto">
+                    <h3
+                        class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 sidebar-label sidebar-section-title whitespace-nowrap">
+                        Recent Repos
+                    </h3>
+                    <div id="recent-repos-container" class="space-y-1">
+                        <div id="recent-repos-list" class="space-y-1">
+                            <!-- Recent repos injected here -->
+                        </div>
                     </div>
                 </div>
+
+                <!-- Tree View -->
+                <div id="view-files"
+                    class="transition-all duration-300 absolute inset-0 px-2 overflow-y-auto hidden opacity-0 translate-x-10">
+                    <h3
+                        class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 sidebar-label sidebar-section-title whitespace-nowrap">
+                        Project Files
+                    </h3>
+                    <div id="repo-tree-container" class="font-mono text-sm space-y-1 pb-4">
+                        <!-- Tree injected here -->
+                        <div class="text-gray-500 italic text-xs">Loading tree...</div>
+                    </div>
+                </div>
+
             </div>
 
             <div class="p-4 border-t border-gray-700">
@@ -311,8 +359,11 @@
             </div>
         </div>
     </div>
+    <script src="/static/gitgraph.js"></script>
+
 
     <script src="/static/script.js"></script>
+
 </body>
 
 </html>
