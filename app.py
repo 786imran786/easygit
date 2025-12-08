@@ -234,6 +234,51 @@ def run_command():
     cmd = request.json.get("command")
     return jsonify(run_git_cmd(cmd))
 
+# ----------------- Git Diff -----------------
+@app.route("/git-diff", methods=["POST"])
+def git_diff():
+    target = request.json.get("target", "main")
+    source = request.json.get("source", "HEAD")
+    
+    if not CURRENT_REPO:
+        return jsonify({"error": "No repo selected"})
+
+    # Check if we are conducting a diff against the current working directory changes or a branch
+    if source == "WORKTREE":
+        cmd = f"git diff {target}"
+    else:
+        cmd = f"git diff {target}...{source}"
+
+    res = run_git_cmd(cmd)
+    if res.get("error") or res["returncode"] != 0:
+        return jsonify(res)
+
+    # Parse Diff output into structured JSON
+    diff_data = []
+    current_file = None
+    
+    lines = res["stdout"].splitlines()
+    for line in lines:
+        if line.startswith("diff --git"):
+            parts = line.split(" ")
+            filename = parts[-1].lstrip("b/")
+            current_file = {"file": filename, "changes": []}
+            diff_data.append(current_file)
+        elif line.startswith("@@"):
+            if current_file:
+                current_file["changes"].append({"type": "header", "content": line})
+        elif line.startswith("+") and not line.startswith("+++"):
+             if current_file:
+                current_file["changes"].append({"type": "add", "content": line})
+        elif line.startswith("-") and not line.startswith("---"):
+             if current_file:
+                current_file["changes"].append({"type": "delete", "content": line})
+        elif line.startswith(" ") or line == "":
+             if current_file:
+                current_file["changes"].append({"type": "context", "content": line})
+    
+    return jsonify(diff_data)
+
 # ----------------- AI Commit -----------------
 @app.route("/ai-commit", methods=["POST"])
 def ai_commit():

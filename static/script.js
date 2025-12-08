@@ -254,6 +254,111 @@ async function confirmPull() {
     updateDashboard();
 }
 
+// ----------------- Git Diff -----------------
+async function openDiffModal() {
+    await loadRemotes('diff-target'); // For now populate with remotes or branches? 
+    // Actually we want local branches mostly for target, but let's load branches
+
+    // specialized load branches for diff dropdowns
+    const res = await API.get('/get-branches');
+    if (!res.error) {
+        const targetSelect = document.getElementById('diff-target');
+        const sourceSelect = document.getElementById('diff-source');
+
+        // Clear and repopulate, keeping static options in source
+        targetSelect.innerHTML = '';
+
+        // Add all branches to target
+        res.branches.forEach(b => {
+            const opt = document.createElement('option');
+            opt.value = b;
+            opt.textContent = b;
+            if (b === 'main') opt.selected = true;
+            targetSelect.appendChild(opt);
+        });
+
+        // Add branches to source, append to existing options
+        // Source has static options (HEAD, WORKTREE) already in HTML, we might want to clear and re-add or just append
+        // Let's clear and re-add to be safe and clean
+        sourceSelect.innerHTML = `
+            <option value="HEAD" selected>Current (HEAD)</option>
+            <option value="WORKTREE">Working Tree (Unstaged)</option>
+        `;
+        res.branches.forEach(b => {
+            const opt = document.createElement('option');
+            opt.value = b;
+            opt.textContent = b;
+            sourceSelect.appendChild(opt);
+        });
+    }
+
+    document.getElementById('diff-modal').classList.remove('hidden');
+    runDiff();
+}
+
+async function runDiff() {
+    const target = document.getElementById('diff-target').value;
+    const source = document.getElementById('diff-source').value;
+    const container = document.getElementById('diff-content');
+
+    container.innerHTML = '<div class="text-gray-500 animate-pulse">Loading diff...</div>';
+
+    const diffData = await API.post('/git-diff', { target, source });
+
+    if (diffData.error) {
+        container.innerHTML = `<div class="text-red-400 font-bold">Error: ${diffData.error}</div><div class="text-gray-500 text-xs">${diffData.stderr || ''}</div>`;
+        return;
+    }
+
+    if (diffData.length === 0) {
+        container.innerHTML = '<div class="text-gray-500 italic text-center mt-10">No changes found between these references.</div>';
+        return;
+    }
+
+    renderDiff(diffData);
+}
+
+function renderDiff(data) {
+    const container = document.getElementById('diff-content');
+    container.innerHTML = '';
+
+    data.forEach(file => {
+        const fileBlock = document.createElement('div');
+        fileBlock.className = 'mb-8 bg-gray-800 rounded-lg overflow-hidden border border-gray-700';
+
+        // File Header
+        const header = document.createElement('div');
+        header.className = 'bg-gray-750 p-2 border-b border-gray-700 font-bold text-blue-300 flex items-center gap-2 sticky top-0';
+        header.innerHTML = `📄 ${file.file}`;
+        fileBlock.appendChild(header);
+
+        // Code Content
+        const code = document.createElement('div');
+        code.className = 'p-0 text-sm font-mono overflow-x-auto';
+
+        file.changes.forEach(change => {
+            const line = document.createElement('div');
+            line.className = 'px-4 py-0.5 whitespace-pre';
+
+            if (change.type === 'header') {
+                line.className += ' text-purple-400 bg-gray-900 pt-2 pb-1 border-t border-gray-800 mt-2 text-xs font-bold opacity-80';
+            } else if (change.type === 'add') {
+                line.className += ' bg-green-900/30 text-green-300';
+            } else if (change.type === 'delete') {
+                line.className += ' bg-red-900/30 text-red-300';
+            } else {
+                line.className += ' text-gray-400';
+            }
+
+            line.textContent = change.content;
+            code.appendChild(line);
+        });
+
+        fileBlock.appendChild(code);
+        container.appendChild(fileBlock);
+    });
+}
+
 // ----------------- Helpers -----------------
 
 async function loadRemotes(selectId) {
